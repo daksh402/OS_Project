@@ -1,0 +1,9 @@
+{
+  "name": "scheduler-pro-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full-stack CPU scheduling dashboard with I/O cycles, deadlock avoidance, and split-screen visualization.",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
