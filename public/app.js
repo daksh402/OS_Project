@@ -2,10 +2,8 @@ const state = {
   processes: [],
   algorithms: [
     { id: "fcfs", label: "FCFS", checked: true },
-    { id: "sjf", label: "SJF", checked: false },
-    { id: "srtf", label: "SRTF", checked: true },
-    { id: "priority", label: "Priority", checked: false },
-    { id: "aging", label: "Priority Aging", checked: true },
+    { id: "sjf", label: "SJF", checked: true },
+    { id: "aging", label: "Priority (Aging)", checked: true },
     { id: "rr", label: "Round Robin", checked: true }
   ],
   result: null,
@@ -19,20 +17,19 @@ const els = {
   processTableBody: document.getElementById("processTableBody"),
   rankingCards: document.getElementById("rankingCards"),
   runCards: document.getElementById("runCards"),
-  splitScreen: document.getElementById("splitScreen"),
   utilizationCanvas: document.getElementById("utilizationCanvas"),
+  summaryNotes: document.getElementById("summaryNotes"),
   deadlockSummary: document.getElementById("deadlockSummary"),
   resourceGraph: document.getElementById("resourceGraph"),
   quantumInput: document.getElementById("quantumInput"),
   themeSelect: document.getElementById("themeSelect"),
   algorithmsActive: document.getElementById("algorithmsActive"),
   processCount: document.getElementById("processCount"),
-  deadlockStatus: document.getElementById("deadlockStatus"),
+  bestAlgorithm: document.getElementById("bestAlgorithm"),
   pidInput: document.getElementById("pidInput"),
   arrivalInput: document.getElementById("arrivalInput"),
   priorityInput: document.getElementById("priorityInput"),
   cpuInput: document.getElementById("cpuInput"),
-  ioInput: document.getElementById("ioInput"),
   maxInput: document.getElementById("maxInput"),
   allocationInput: document.getElementById("allocationInput"),
   requestInput: document.getElementById("requestInput"),
@@ -62,7 +59,15 @@ function bindEvents() {
 async function loadDemo() {
   const response = await fetch("/api/defaults");
   const payload = await response.json();
-  state.processes = payload.processes;
+  state.processes = payload.processes.map((process) => ({
+    pid: process.pid,
+    arrivalTime: process.arrivalTime,
+    priority: process.priority,
+    cpuBursts: [process.cpuBursts[0]],
+    maxResources: process.maxResources,
+    allocation: process.allocation,
+    request: process.request
+  }));
   els.quantumInput.value = payload.quantum;
   [els.resource1.value, els.resource2.value, els.resource3.value] = payload.totalResources;
   state.algorithms.forEach((item) => {
@@ -80,7 +85,7 @@ function renderAlgorithmList() {
     const wrapper = document.createElement("label");
     wrapper.className = "checkbox-pill";
     wrapper.innerHTML = `
-      <input type="checkbox" ${algorithm.checked ? "checked" : ""} data-id="${algorithm.id}">
+      <input type="checkbox" ${algorithm.checked ? "checked" : ""}>
       <span>${algorithm.label}</span>
     `;
     wrapper.querySelector("input").addEventListener("change", (event) => {
@@ -98,11 +103,10 @@ function renderProcessTable() {
       <td>${process.pid}</td>
       <td>${process.arrivalTime}</td>
       <td>${process.priority}</td>
-      <td>${process.cpuBursts.join(", ")}</td>
-      <td>${process.ioBursts.join(", ") || "-"}</td>
-      <td>${process.maxResources.join(", ")}</td>
-      <td>${process.allocation.join(", ")}</td>
-      <td>${process.request.join(", ")}</td>
+      <td>${process.cpuBursts[0]}</td>
+      <td>${(process.maxResources || [0, 0, 0]).join(", ")}</td>
+      <td>${(process.allocation || [0, 0, 0]).join(", ")}</td>
+      <td>${(process.request || [0, 0, 0]).join(", ")}</td>
       <td>
         <div class="small-actions">
           <button class="ghost" data-action="edit" data-pid="${process.pid}">Edit</button>
@@ -124,21 +128,12 @@ function renderProcessTable() {
   els.processCount.textContent = String(state.processes.length);
 }
 
-function parseCsvVector(value) {
-  const trimmed = String(value || "").trim();
-  if (!trimmed) {
-    return [];
-  }
-  return trimmed.split(",").map((item) => Number(item.trim())).filter((item) => !Number.isNaN(item));
-}
-
 function upsertProcess() {
   const process = {
     pid: els.pidInput.value.trim() || `P${state.processes.length + 1}`,
     arrivalTime: Number(els.arrivalInput.value),
     priority: Number(els.priorityInput.value),
-    cpuBursts: parseCsvVector(els.cpuInput.value),
-    ioBursts: parseCsvVector(els.ioInput.value),
+    cpuBursts: [Number(els.cpuInput.value)],
     maxResources: parseCsvVector(els.maxInput.value),
     allocation: parseCsvVector(els.allocationInput.value),
     request: parseCsvVector(els.requestInput.value)
@@ -160,8 +155,7 @@ function clearForm() {
   els.pidInput.value = "";
   els.arrivalInput.value = "0";
   els.priorityInput.value = "1";
-  els.cpuInput.value = "4,3";
-  els.ioInput.value = "2";
+  els.cpuInput.value = "4";
   els.maxInput.value = "2,1,1";
   els.allocationInput.value = "0,0,0";
   els.requestInput.value = "0,0,0";
@@ -176,11 +170,10 @@ function loadProcessIntoForm(pid) {
   els.pidInput.value = process.pid;
   els.arrivalInput.value = process.arrivalTime;
   els.priorityInput.value = process.priority;
-  els.cpuInput.value = process.cpuBursts.join(",");
-  els.ioInput.value = process.ioBursts.join(",");
-  els.maxInput.value = process.maxResources.join(",");
-  els.allocationInput.value = process.allocation.join(",");
-  els.requestInput.value = process.request.join(",");
+  els.cpuInput.value = process.cpuBursts[0];
+  els.maxInput.value = (process.maxResources || [0, 0, 0]).join(",");
+  els.allocationInput.value = (process.allocation || [0, 0, 0]).join(",");
+  els.requestInput.value = (process.request || [0, 0, 0]).join(",");
 }
 
 function deleteProcess(pid) {
@@ -196,7 +189,16 @@ async function runSimulation() {
   }
 
   const payload = {
-    processes: state.processes,
+    processes: state.processes.map((process) => ({
+      pid: process.pid,
+      arrivalTime: process.arrivalTime,
+      priority: process.priority,
+      cpuBursts: process.cpuBursts,
+      ioBursts: [],
+      maxResources: process.maxResources || [0, 0, 0],
+      allocation: process.allocation || [0, 0, 0],
+      request: process.request || [0, 0, 0]
+    })),
     quantum: Number(els.quantumInput.value),
     algorithms,
     totalResources: [Number(els.resource1.value), Number(els.resource2.value), Number(els.resource3.value)]
@@ -221,11 +223,10 @@ function renderDashboard() {
     return;
   }
   els.algorithmsActive.textContent = String(state.result.meta.algorithms.length);
-  els.deadlockStatus.textContent = state.result.deadlock.safe ? "Safe" : "Unsafe";
-  els.deadlockStatus.style.color = state.result.deadlock.safe ? "#7df0c0" : "#ff9a9a";
+  els.bestAlgorithm.textContent = state.result.ranking[0]?.algorithmName || "-";
   renderRanking();
-  renderSplitScreen();
   renderRunCards();
+  renderSummary();
   renderDeadlock();
   renderUtilizationChart();
 }
@@ -248,17 +249,10 @@ function renderRanking() {
   });
 }
 
-function renderSplitScreen() {
-  els.splitScreen.innerHTML = "";
-  state.result.runs.slice(0, 2).forEach((run, index) => {
-    els.splitScreen.appendChild(createRunCard(run, index));
-  });
-}
-
 function renderRunCards() {
   els.runCards.innerHTML = "";
-  state.result.runs.forEach((run, index) => {
-    els.runCards.appendChild(createRunCard(run, index));
+  state.result.runs.forEach((run) => {
+    els.runCards.appendChild(createRunCard(run));
   });
 }
 
@@ -266,13 +260,13 @@ function createRunCard(run) {
   const card = document.createElement("article");
   card.className = "run-card";
   const processColors = new Map();
-  run.processMetrics.forEach((item, itemIndex) => {
-    processColors.set(item.pid, colors[itemIndex % colors.length]);
+  run.processMetrics.forEach((item, index) => {
+    processColors.set(item.pid, colors[index % colors.length]);
   });
   processColors.set("IDLE", "#334155");
 
   const ganttMarkup = run.gantt.map((segment) => {
-    const width = Math.max((segment.end - segment.start) * 28, 42);
+    const width = Math.max((segment.end - segment.start) * 30, 44);
     return `
       <div class="gantt-block" style="width:${width}px;background:${processColors.get(segment.pid) || "#64748b"}">
         ${segment.pid}
@@ -281,7 +275,7 @@ function createRunCard(run) {
     `;
   }).join("");
 
-  const stateRows = run.stateTimeline.slice(0, 12).map((row) => `
+  const stateRows = run.stateTimeline.slice(0, 10).map((row) => `
     <div class="state-row">
       <div>T${row.time}</div>
       <div>${row.running}</div>
@@ -304,7 +298,7 @@ function createRunCard(run) {
         <div><strong>Time</strong></div>
         <div><strong>CPU</strong></div>
         <div><strong>Ready</strong></div>
-        <div><strong>Waiting / I/O</strong></div>
+        <div><strong>Waiting</strong></div>
       </div>
       ${stateRows}
     </div>
@@ -312,15 +306,33 @@ function createRunCard(run) {
   return card;
 }
 
+function renderSummary() {
+  const top = state.result.ranking[0];
+  const averageCpu = (
+    state.result.runs.reduce((sum, run) => sum + run.metrics.cpuUtilization, 0) /
+    state.result.runs.length
+  ).toFixed(2);
+
+  els.summaryNotes.innerHTML = `
+    <div class="summary-note"><strong>Best Performing Algorithm</strong><br>${top.algorithmName} ranked first with score ${top.score}.</div>
+    <div class="summary-note"><strong>Average CPU Utilization</strong><br>${averageCpu}% across the selected algorithms.</div>
+    <div class="summary-note"><strong>Evaluation Basis</strong><br>Ranking uses waiting time, turnaround time, response time, throughput, and CPU utilization.</div>
+  `;
+}
+
 function renderDeadlock() {
   const { deadlock } = state.result;
   els.deadlockSummary.innerHTML = `
-    <div class="deadlock-note">
-      <span class="tag ${deadlock.safe ? "safe" : "unsafe"}">${deadlock.safe ? "Safe Sequence" : "Unsafe State"}</span>
-      ${deadlock.safeSequence.join(" → ") || "No safe sequence"}
+    <div class="summary-note">
+      <strong>Status</strong><br>
+      <span class="tag ${deadlock.safe ? "safe" : "unsafe"}">${deadlock.safe ? "Safe" : "Unsafe"}</span>
+      ${deadlock.safeSequence.length ? deadlock.safeSequence.join(" → ") : "No safe sequence"}
     </div>
     ${deadlock.decisions.map((decision) => `
-      <div class="deadlock-note"><strong>${decision.pid}</strong>: ${decision.action.toUpperCase()}<br>${decision.reason}</div>
+      <div class="summary-note">
+        <strong>${decision.pid}</strong><br>
+        ${decision.action.toUpperCase()} - ${decision.reason}
+      </div>
     `).join("")}
   `;
   drawResourceGraph(deadlock.graph);
@@ -339,13 +351,13 @@ function drawResourceGraph(graph) {
   const processNodes = graph.nodes.filter((node) => node.type === "process");
   const resourceNodes = graph.nodes.filter((node) => node.type === "resource");
   const position = new Map();
-
-  processNodes.forEach((node, index) => position.set(node.id, { x: 140, y: 60 + index * 62 }));
+  processNodes.forEach((node, index) => position.set(node.id, { x: 150, y: 60 + index * 62 }));
   resourceNodes.forEach((node, index) => position.set(node.id, { x: 470, y: 75 + index * 82 }));
 
   graph.edges.forEach((edge) => {
     const from = position.get(edge.from);
     const to = position.get(edge.to);
+    if (!from || !to) return;
     const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
     line.setAttribute("x1", String(from.x));
     line.setAttribute("y1", String(from.y));
@@ -451,12 +463,7 @@ function renderUtilizationChart() {
 }
 
 function applyTheme() {
-  const selected = els.themeSelect.value;
-  if (selected === "system") {
-    document.body.classList.toggle("light", window.matchMedia("(prefers-color-scheme: light)").matches);
-    return;
-  }
-  document.body.classList.toggle("light", selected === "light");
+  document.body.classList.toggle("light", els.themeSelect.value === "light");
 }
 
 init();

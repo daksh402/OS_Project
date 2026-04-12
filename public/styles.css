@@ -95,7 +95,8 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
 
 canvas, .resource-graph { width: 100%; border-radius: 18px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); }
 .resource-graph { min-height: 320px; }
-.deadlock-note { padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); font-size: 13px; }
+.deadlock-note, .summary-note { padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); font-size: 13px; }
+.summary-notes { display: grid; gap: 10px; }
 .small-actions button { padding: 8px 12px; border-radius: 10px; }
 
 @media (max-width: 1280px) {

@@ -3,39 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scheduler Pro Dashboard</title>
+  <title>CPU Scheduling Visualiser</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar">
       <div>
-        <div class="eyebrow">Full-Stack Lab</div>
-        <h1>Scheduler Pro Dashboard</h1>
-        <p class="muted">CPU scheduling, I/O cycles, deadlock avoidance, and side-by-side comparison in one modern workspace.</p>
+        <div class="eyebrow">PDF Scope</div>
+        <h1>CPU Scheduling Visualiser</h1>
+        <p class="muted">A cleaner dashboard focused on core scheduling features: process input, classic algorithms, Gantt charts, and automatic metrics.</p>
       </div>
 
       <section class="panel form-panel">
         <div class="section-title">Simulation Controls</div>
         <div class="grid-two">
           <label>Quantum<input id="quantumInput" type="number" min="1" value="2"></label>
-          <label>
-            Theme
-            <select id="themeSelect">
-              <option value="dark">Dark</option>
-              <option value="system">System</option>
-              <option value="light">Light</option>
-            </select>
-          </label>
+          <label>Theme<select id="themeSelect"><option value="dark">Dark</option><option value="light">Light</option></select></label>
         </div>
-        <div class="section-subtitle">Algorithms</div>
-        <div class="checkbox-grid" id="algorithmList"></div>
         <div class="section-subtitle">System Resources</div>
-        <div class="resource-grid">
+        <div class="grid-three">
           <label>R1<input id="resource1" type="number" min="0" value="7"></label>
           <label>R2<input id="resource2" type="number" min="0" value="5"></label>
           <label>R3<input id="resource3" type="number" min="0" value="4"></label>
         </div>
+        <div class="section-subtitle">Algorithms</div>
+        <div class="checkbox-grid" id="algorithmList"></div>
         <div class="button-row">
           <button id="runBtn" class="primary">Run Simulation</button>
           <button id="loadDemoBtn" class="secondary">Load Demo</button>
@@ -48,8 +41,7 @@
           <label>PID<input id="pidInput" type="text" placeholder="P5"></label>
           <label>Arrival<input id="arrivalInput" type="number" min="0" value="0"></label>
           <label>Priority<input id="priorityInput" type="number" min="0" value="1"></label>
-          <label>CPU Bursts<input id="cpuInput" type="text" value="4,3"></label>
-          <label>IO Bursts<input id="ioInput" type="text" value="2"></label>
+          <label>Burst Time<input id="cpuInput" type="number" min="1" value="4"></label>
         </div>
         <div class="section-subtitle">Deadlock Inputs</div>
         <div class="grid-three">
@@ -67,21 +59,21 @@
     <main class="main-content">
       <section class="hero panel">
         <div>
-          <div class="eyebrow">Professional View</div>
-          <h2>Run multiple algorithms against the same workload</h2>
-          <p class="muted">Compare split-screen Gantt charts, CPU utilization trends, queue transitions, I/O waits, and Banker-based deadlock avoidance decisions without leaving the page.</p>
+          <div class="eyebrow">Core Features</div>
+          <h2>Compare classic CPU scheduling algorithms on one dataset</h2>
+          <p class="muted">Select the core algorithms from the PDF, run them together, and compare their performance using Gantt charts, CPU utilization, waiting time, turnaround time, and response time.</p>
         </div>
         <div class="hero-metrics">
           <div class="metric-card"><span>Algorithms Active</span><strong id="algorithmsActive">0</strong></div>
           <div class="metric-card"><span>Processes</span><strong id="processCount">0</strong></div>
-          <div class="metric-card"><span>Deadlock Status</span><strong id="deadlockStatus">Unknown</strong></div>
+          <div class="metric-card"><span>Best Ranked</span><strong id="bestAlgorithm">-</strong></div>
         </div>
       </section>
 
       <section class="grid-layout">
         <section class="panel">
-          <div class="section-title">Workload Editor</div>
-          <div class="muted">CPU-I/O-CPU cycles and resource claims</div>
+          <div class="section-title">Process Table</div>
+          <div class="muted">Simple process model with arrival time, burst time, and priority.</div>
           <div class="table-wrap">
             <table>
               <thead>
@@ -89,8 +81,7 @@
                   <th>PID</th>
                   <th>Arrival</th>
                   <th>Priority</th>
-                  <th>CPU Bursts</th>
-                  <th>I/O Bursts</th>
+                  <th>Burst</th>
                   <th>Max</th>
                   <th>Alloc</th>
                   <th>Req</th>
@@ -115,20 +106,26 @@
         </section>
 
         <section class="panel">
-          <div class="section-title">Deadlock Avoidance Graph</div>
-          <div id="deadlockSummary" class="deadlock-summary"></div>
+          <div class="section-title">Summary</div>
+          <div id="summaryNotes" class="summary-notes"></div>
+        </section>
+      </section>
+
+      <section class="grid-layout">
+        <section class="panel">
+          <div class="section-title">Deadlock Avoidance</div>
+          <div id="deadlockSummary" class="summary-notes"></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-title">Resource Graph</div>
           <svg id="resourceGraph" viewBox="0 0 620 320" class="resource-graph"></svg>
         </section>
       </section>
 
       <section class="panel">
-        <div class="section-title">Split-Screen Gantt Visualization</div>
-        <div class="muted">The first two selected algorithms stay pinned side-by-side for direct comparison.</div>
-        <div id="splitScreen" class="split-screen"></div>
-      </section>
-
-      <section class="panel">
-        <div class="section-title">All Algorithm Runs</div>
+        <div class="section-title">Algorithm Results</div>
+        <div class="muted">Each selected algorithm shows its Gantt chart, queue timeline, and key performance values.</div>
         <div id="runCards" class="run-cards"></div>
       </section>
     </main>
