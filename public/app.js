@@ -13,6 +13,8 @@ const state = {
 const colors = ["#2563eb", "#7c3aed", "#10b981", "#f59e0b", "#ec4899", "#06b6d4", "#ef4444"];
 
 const els = {
+  landingScreen: document.getElementById("landingScreen"),
+  dashboardShell: document.getElementById("dashboardShell"),
   algorithmList: document.getElementById("algorithmList"),
   processTableBody: document.getElementById("processTableBody"),
   rankingCards: document.getElementById("rankingCards"),
@@ -36,11 +38,16 @@ const els = {
   resource1: document.getElementById("resource1"),
   resource2: document.getElementById("resource2"),
   resource3: document.getElementById("resource3"),
+  homeBtn: document.getElementById("homeBtn"),
   runBtn: document.getElementById("runBtn"),
   loadDemoBtn: document.getElementById("loadDemoBtn"),
   addProcessBtn: document.getElementById("addProcessBtn"),
   clearFormBtn: document.getElementById("clearFormBtn")
 };
+
+const panels = Array.from(document.querySelectorAll(".view-panel"));
+const navButtons = Array.from(document.querySelectorAll(".nav-btn"));
+const slideCards = Array.from(document.querySelectorAll(".slide-card"));
 
 async function init() {
   renderAlgorithmList();
@@ -54,6 +61,13 @@ function bindEvents() {
   els.addProcessBtn.addEventListener("click", upsertProcess);
   els.clearFormBtn.addEventListener("click", clearForm);
   els.themeSelect.addEventListener("change", applyTheme);
+  els.homeBtn.addEventListener("click", showLanding);
+  navButtons.forEach((button) => {
+    button.addEventListener("click", () => openView(button.dataset.view));
+  });
+  slideCards.forEach((card) => {
+    card.addEventListener("click", () => openView(card.dataset.view));
+  });
 }
 
 async function loadDemo() {
@@ -229,6 +243,27 @@ function renderDashboard() {
   renderSummary();
   renderDeadlock();
   renderUtilizationChart();
+}
+
+function showLanding() {
+  els.landingScreen.classList.remove("hidden");
+  els.dashboardShell.classList.add("hidden");
+}
+
+function openView(view) {
+  els.landingScreen.classList.add("hidden");
+  els.dashboardShell.classList.remove("hidden");
+
+  if (view === "all") {
+    panels.forEach((panel) => panel.classList.remove("hidden"));
+    navButtons.forEach((button) => button.classList.toggle("active", button.dataset.view === "all"));
+    return;
+  }
+
+  panels.forEach((panel) => {
+    panel.classList.toggle("hidden", panel.dataset.panel !== view);
+  });
+  navButtons.forEach((button) => button.classList.toggle("active", button.dataset.view === view));
 }
 
 function renderRanking() {

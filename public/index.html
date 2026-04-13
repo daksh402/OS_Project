@@ -7,128 +7,181 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar">
+  <div class="landing-screen panel" id="landingScreen">
+    <div class="landing-copy">
+      <div class="eyebrow">Operating Systems Project</div>
+      <h1>CPU Scheduling Visualiser</h1>
+      <p class="muted">Start from a clean opening screen and choose exactly what you want to view: scheduler controls, process table, charts, deadlock analysis, or final results.</p>
+    </div>
+    <div class="slide-grid">
+      <button class="slide-card" data-view="scheduler">
+        <span class="slide-label">01</span>
+        <strong>Scheduler</strong>
+        <span>Open process inputs and algorithm selection.</span>
+      </button>
+      <button class="slide-card" data-view="processes">
+        <span class="slide-label">02</span>
+        <strong>Processes</strong>
+        <span>View and manage the process table.</span>
+      </button>
+      <button class="slide-card" data-view="metrics">
+        <span class="slide-label">03</span>
+        <strong>Metrics</strong>
+        <span>See ranking cards and CPU utilization.</span>
+      </button>
+      <button class="slide-card" data-view="deadlock">
+        <span class="slide-label">04</span>
+        <strong>Deadlock</strong>
+        <span>Inspect Banker decisions and the resource graph.</span>
+      </button>
+      <button class="slide-card" data-view="results">
+        <span class="slide-label">05</span>
+        <strong>Results</strong>
+        <span>Review Gantt charts and timelines.</span>
+      </button>
+      <button class="slide-card accent" data-view="all">
+        <span class="slide-label">06</span>
+        <strong>View Everything</strong>
+        <span>Open the full dashboard in one page.</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="dashboard-shell hidden" id="dashboardShell">
+    <header class="topbar panel">
       <div>
-        <div class="eyebrow">PDF Scope</div>
-        <h1>CPU Scheduling Visualiser</h1>
-        <p class="muted">A cleaner dashboard focused on core scheduling features: process input, classic algorithms, Gantt charts, and automatic metrics.</p>
+        <div class="eyebrow">CPU Scheduling Visualiser</div>
+        <h2 class="topbar-title">Slide View Dashboard</h2>
       </div>
+      <div class="topbar-actions">
+        <button class="ghost" id="homeBtn">Home</button>
+        <button class="ghost nav-btn" data-view="scheduler">Scheduler</button>
+        <button class="ghost nav-btn" data-view="processes">Processes</button>
+        <button class="ghost nav-btn" data-view="metrics">Metrics</button>
+        <button class="ghost nav-btn" data-view="deadlock">Deadlock</button>
+        <button class="ghost nav-btn" data-view="results">Results</button>
+        <button class="primary nav-btn" data-view="all">All</button>
+      </div>
+    </header>
 
-      <section class="panel form-panel">
-        <div class="section-title">Simulation Controls</div>
-        <div class="grid-two">
-          <label>Quantum<input id="quantumInput" type="number" min="1" value="2"></label>
-          <label>Theme<select id="themeSelect"><option value="dark">Dark</option><option value="light">Light</option></select></label>
-        </div>
-        <div class="section-subtitle">System Resources</div>
-        <div class="grid-three">
-          <label>R1<input id="resource1" type="number" min="0" value="7"></label>
-          <label>R2<input id="resource2" type="number" min="0" value="5"></label>
-          <label>R3<input id="resource3" type="number" min="0" value="4"></label>
-        </div>
-        <div class="section-subtitle">Algorithms</div>
-        <div class="checkbox-grid" id="algorithmList"></div>
-        <div class="button-row">
-          <button id="runBtn" class="primary">Run Simulation</button>
-          <button id="loadDemoBtn" class="secondary">Load Demo</button>
-        </div>
-      </section>
+    <section class="hero panel">
+      <div>
+        <div class="eyebrow">Core Features</div>
+        <h2>Compare classic CPU scheduling algorithms on one dataset</h2>
+        <p class="muted">Use the opening window to jump directly to the section you want, or open the full dashboard when you need everything together.</p>
+      </div>
+      <div class="hero-metrics">
+        <div class="metric-card"><span>Algorithms Active</span><strong id="algorithmsActive">0</strong></div>
+        <div class="metric-card"><span>Processes</span><strong id="processCount">0</strong></div>
+        <div class="metric-card"><span>Best Ranked</span><strong id="bestAlgorithm">-</strong></div>
+      </div>
+    </section>
 
-      <section class="panel form-panel">
-        <div class="section-title">Add / Update Process</div>
-        <div class="grid-two">
-          <label>PID<input id="pidInput" type="text" placeholder="P5"></label>
-          <label>Arrival<input id="arrivalInput" type="number" min="0" value="0"></label>
-          <label>Priority<input id="priorityInput" type="number" min="0" value="1"></label>
-          <label>Burst Time<input id="cpuInput" type="number" min="1" value="4"></label>
-        </div>
-        <div class="section-subtitle">Deadlock Inputs</div>
-        <div class="grid-three">
-          <label>Max<input id="maxInput" type="text" value="2,1,1"></label>
-          <label>Allocated<input id="allocationInput" type="text" value="0,0,0"></label>
-          <label>Request<input id="requestInput" type="text" value="0,0,0"></label>
-        </div>
-        <div class="button-row">
-          <button id="addProcessBtn" class="primary">Save Process</button>
-          <button id="clearFormBtn" class="ghost">Clear Form</button>
-        </div>
-      </section>
-    </aside>
-
-    <main class="main-content">
-      <section class="hero panel">
-        <div>
-          <div class="eyebrow">Core Features</div>
-          <h2>Compare classic CPU scheduling algorithms on one dataset</h2>
-          <p class="muted">Select the core algorithms from the PDF, run them together, and compare their performance using Gantt charts, CPU utilization, waiting time, turnaround time, and response time.</p>
-        </div>
-        <div class="hero-metrics">
-          <div class="metric-card"><span>Algorithms Active</span><strong id="algorithmsActive">0</strong></div>
-          <div class="metric-card"><span>Processes</span><strong id="processCount">0</strong></div>
-          <div class="metric-card"><span>Best Ranked</span><strong id="bestAlgorithm">-</strong></div>
-        </div>
-      </section>
-
-      <section class="grid-layout">
-        <section class="panel">
-          <div class="section-title">Process Table</div>
-          <div class="muted">Simple process model with arrival time, burst time, and priority.</div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>PID</th>
-                  <th>Arrival</th>
-                  <th>Priority</th>
-                  <th>Burst</th>
-                  <th>Max</th>
-                  <th>Alloc</th>
-                  <th>Req</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="processTableBody"></tbody>
-            </table>
+    <section class="view-panel" data-panel="scheduler">
+      <div class="panel split-layout">
+        <section class="panel form-panel inner-panel">
+          <div class="section-title">Simulation Controls</div>
+          <div class="grid-two">
+            <label>Quantum<input id="quantumInput" type="number" min="1" value="2"></label>
+            <label>Theme<select id="themeSelect"><option value="dark">Dark</option><option value="light">Light</option></select></label>
+          </div>
+          <div class="section-subtitle">System Resources</div>
+          <div class="grid-three">
+            <label>R1<input id="resource1" type="number" min="0" value="7"></label>
+            <label>R2<input id="resource2" type="number" min="0" value="5"></label>
+            <label>R3<input id="resource3" type="number" min="0" value="4"></label>
+          </div>
+          <div class="section-subtitle">Algorithms</div>
+          <div class="checkbox-grid" id="algorithmList"></div>
+          <div class="button-row">
+            <button id="runBtn" class="primary">Run Simulation</button>
+            <button id="loadDemoBtn" class="secondary">Load Demo</button>
           </div>
         </section>
 
+        <section class="panel form-panel inner-panel">
+          <div class="section-title">Add / Update Process</div>
+          <div class="grid-two">
+            <label>PID<input id="pidInput" type="text" placeholder="P5"></label>
+            <label>Arrival<input id="arrivalInput" type="number" min="0" value="0"></label>
+            <label>Priority<input id="priorityInput" type="number" min="0" value="1"></label>
+            <label>Burst Time<input id="cpuInput" type="number" min="1" value="4"></label>
+          </div>
+          <div class="section-subtitle">Deadlock Inputs</div>
+          <div class="grid-three">
+            <label>Max<input id="maxInput" type="text" value="2,1,1"></label>
+            <label>Allocated<input id="allocationInput" type="text" value="0,0,0"></label>
+            <label>Request<input id="requestInput" type="text" value="0,0,0"></label>
+          </div>
+          <div class="button-row">
+            <button id="addProcessBtn" class="primary">Save Process</button>
+            <button id="clearFormBtn" class="ghost">Clear Form</button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="view-panel" data-panel="processes">
+      <section class="panel">
+        <div class="section-title">Process Table</div>
+        <div class="muted">Simple process model with arrival time, burst time, priority, and deadlock vectors.</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>PID</th>
+                <th>Arrival</th>
+                <th>Priority</th>
+                <th>Burst</th>
+                <th>Max</th>
+                <th>Alloc</th>
+                <th>Req</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="processTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <section class="view-panel" data-panel="metrics">
+      <div class="grid-layout">
         <section class="panel">
           <div class="section-title">Ranking & Metrics</div>
           <div id="rankingCards" class="ranking-cards"></div>
         </section>
-      </section>
-
-      <section class="grid-layout">
-        <section class="panel">
-          <div class="section-title">CPU Utilization Graph</div>
-          <canvas id="utilizationCanvas" width="760" height="260"></canvas>
-        </section>
-
         <section class="panel">
           <div class="section-title">Summary</div>
           <div id="summaryNotes" class="summary-notes"></div>
         </section>
+      </div>
+      <section class="panel">
+        <div class="section-title">CPU Utilization Graph</div>
+        <canvas id="utilizationCanvas" width="760" height="260"></canvas>
       </section>
+    </section>
 
-      <section class="grid-layout">
+    <section class="view-panel" data-panel="deadlock">
+      <div class="grid-layout">
         <section class="panel">
           <div class="section-title">Deadlock Avoidance</div>
           <div id="deadlockSummary" class="summary-notes"></div>
         </section>
-
         <section class="panel">
           <div class="section-title">Resource Graph</div>
           <svg id="resourceGraph" viewBox="0 0 620 320" class="resource-graph"></svg>
         </section>
-      </section>
+      </div>
+    </section>
 
+    <section class="view-panel" data-panel="results">
       <section class="panel">
         <div class="section-title">Algorithm Results</div>
         <div class="muted">Each selected algorithm shows its Gantt chart, queue timeline, and key performance values.</div>
         <div id="runCards" class="run-cards"></div>
       </section>
-    </main>
+    </section>
   </div>
 
   <script src="/app.js"></script>
