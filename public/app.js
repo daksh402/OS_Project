@@ -91,6 +91,7 @@ async function loadDemo() {
   renderAlgorithmList();
   renderProcessTable();
   await runSimulation();
+  openView("scheduler");
 }
 
 function renderAlgorithmList() {
@@ -142,6 +143,17 @@ function renderProcessTable() {
   els.processCount.textContent = String(state.processes.length);
 }
 
+function parseCsvVector(value) {
+  const trimmed = String(value || "").trim();
+  if (!trimmed) {
+    return [0, 0, 0];
+  }
+  return trimmed
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter((item) => !Number.isNaN(item));
+}
+
 function upsertProcess() {
   const process = {
     pid: els.pidInput.value.trim() || `P${state.processes.length + 1}`,
@@ -180,6 +192,7 @@ function loadProcessIntoForm(pid) {
   if (!process) {
     return;
   }
+  openView("scheduler");
   state.editingPid = pid;
   els.pidInput.value = process.pid;
   els.arrivalInput.value = process.arrivalTime;
@@ -230,6 +243,7 @@ async function runSimulation() {
   }
   state.result = result;
   renderDashboard();
+  openView("results");
 }
 
 function renderDashboard() {
