@@ -389,6 +389,19 @@ function renderDeadlock() {
 
 function drawResourceGraph(graph) {
   const svg = els.resourceGraph;
+  const processNodes = graph.nodes.filter((node) => node.type === "process");
+  const resourceNodes = graph.nodes.filter((node) => node.type === "resource");
+  const topPadding = 64;
+  const bottomPadding = 56;
+  const processSpacing = 84;
+  const resourceSpacing = 96;
+  const height = Math.max(
+    320,
+    topPadding + bottomPadding + Math.max(processNodes.length - 1, 0) * processSpacing,
+    topPadding + bottomPadding + Math.max(resourceNodes.length - 1, 0) * resourceSpacing
+  );
+
+  svg.setAttribute("viewBox", `0 0 620 ${height}`);
   svg.innerHTML = `
     <defs>
       <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
@@ -396,32 +409,60 @@ function drawResourceGraph(graph) {
       </marker>
     </defs>
   `;
-
-  const processNodes = graph.nodes.filter((node) => node.type === "process");
-  const resourceNodes = graph.nodes.filter((node) => node.type === "resource");
   const position = new Map();
-  processNodes.forEach((node, index) => position.set(node.id, { x: 150, y: 60 + index * 62 }));
-  resourceNodes.forEach((node, index) => position.set(node.id, { x: 470, y: 75 + index * 82 }));
+  processNodes.forEach((node, index) => position.set(node.id, { x: 140, y: topPadding + index * processSpacing }));
+  resourceNodes.forEach((node, index) => position.set(node.id, { x: 485, y: topPadding + 14 + index * resourceSpacing }));
+
+  const slotUsage = new Map();
+  graph.nodes.forEach((node) => slotUsage.set(node.id, 0));
 
   graph.edges.forEach((edge) => {
     const from = position.get(edge.from);
     const to = position.get(edge.to);
     if (!from || !to) return;
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("x1", String(from.x));
-    line.setAttribute("y1", String(from.y));
-    line.setAttribute("x2", String(to.x));
-    line.setAttribute("y2", String(to.y));
-    line.setAttribute("stroke", edge.kind === "granted" ? "#31c48d" : edge.kind === "request" ? "#f59e0b" : "#58a6ff");
-    line.setAttribute("stroke-width", "2");
-    line.setAttribute("marker-end", "url(#arrow)");
-    svg.appendChild(line);
+
+    const fromSlot = slotUsage.get(edge.from) || 0;
+    const toSlot = slotUsage.get(edge.to) || 0;
+    slotUsage.set(edge.from, fromSlot + 1);
+    slotUsage.set(edge.to, toSlot + 1);
+
+    const x1 = edge.from.startsWith("R") ? from.x - 34 : from.x + 24;
+    const x2 = edge.to.startsWith("R") ? to.x - 34 : to.x + 24;
+    const y1 = from.y + ((fromSlot % 5) - 2) * 8;
+    const y2 = to.y + ((toSlot % 5) - 2) * 8;
+    const midX = (x1 + x2) / 2;
+    const bend = edge.kind === "allocation" ? -18 : 18;
+
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute(
+      "d",
+      `M ${x1} ${y1} C ${midX - 42} ${y1 + bend}, ${midX + 42} ${y2 - bend}, ${x2} ${y2}`
+    );
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", edge.kind === "granted" ? "#31c48d" : edge.kind === "request" ? "#f59e0b" : "#58a6ff");
+    path.setAttribute("stroke-width", "2.5");
+    path.setAttribute("marker-end", "url(#arrow)");
+    path.setAttribute("opacity", "0.96");
+    svg.appendChild(path);
+
+    const labelX = midX;
+    const labelY = (y1 + y2) / 2;
+    const labelBg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    labelBg.setAttribute("x", String(labelX - 24));
+    labelBg.setAttribute("y", String(labelY - 11));
+    labelBg.setAttribute("width", "48");
+    labelBg.setAttribute("height", "18");
+    labelBg.setAttribute("rx", "9");
+    labelBg.setAttribute("fill", "rgba(9,17,31,0.92)");
+    labelBg.setAttribute("stroke", "rgba(142,166,199,0.16)");
+    svg.appendChild(labelBg);
 
     const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    label.setAttribute("x", String((from.x + to.x) / 2));
-    label.setAttribute("y", String((from.y + to.y) / 2 - 6));
+    label.setAttribute("x", String(labelX));
+    label.setAttribute("y", String(labelY + 3));
     label.setAttribute("fill", "#8ea6c7");
-    label.setAttribute("font-size", "11");
+    label.setAttribute("font-size", "10");
+    label.setAttribute("font-weight", "700");
     label.setAttribute("text-anchor", "middle");
     label.textContent = edge.label;
     svg.appendChild(label);
